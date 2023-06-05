@@ -177,6 +177,12 @@ sub iterate {
             next;
          }
 
+         if( $userCommand =~ /^conf alias/ ) {
+            my $responseMessage = "PRIVMSG " . $channel . " :BOT BLOCKED @" . $user . " from running command \"" . $userCommand . "\"\r\n";
+            print $socket $responseMessage;
+            next;
+         }
+
          my $cmd = lc $params[0];
          my @blocked = grep { lc $_ eq $cmd } @blockedCommands;
          if( scalar @blocked != 0 ) {
