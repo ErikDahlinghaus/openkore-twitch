@@ -171,7 +171,7 @@ sub iterate {
          );
 
          my $userCommand = join(' ', @params);
-         if( $userCommand =~ /^conf\s(-f\s)?\*?(twitch|alias)/ ) {
+         if( $userCommand =~ /(eval|twitch|alias|;;)/ ) {
             my $responseMessage = "PRIVMSG " . $channel . " :BOT BLOCKED @" . $user . " from running command \"" . $userCommand . "\"\r\n";
             print $socket $responseMessage;
             next;
