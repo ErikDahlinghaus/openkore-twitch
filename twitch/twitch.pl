@@ -20,7 +20,7 @@ use Commands;
 use Globals qw(%config);
 use Log qw(message error debug warning);
 
-Plugins::register('twitch', 'Allows control of Kore with Twitch chat.', \&onUnload);
+Plugins::register('twitch', 'Allows control of Kore with Twitch chat.', \&onUnload, \&onReload);
 
 # # Twitch IRC server details
 my ($server, $port, $username, $token, $channel, $socket);
@@ -30,12 +30,17 @@ my $hooks = Plugins::addHooks(
    ['AI_start', \&iterate, undef]
 );
 
+sub onReload {
+   onLoad();
+}
+
 sub onLoad {
    $server   = $config{twitch_server} || 'irc.chat.twitch.tv';
    $port     = $config{twitch_port} || 6667;
    $username = $config{twitch_user};
    $token    = $config{twitch_token};
    $channel  = "#" . $config{twitch_channel};
+   $socket = undef;
    
    if( !$config{twitch} ) {
       error "[Twitch] Unloading twitch plugin, twitch key missing in config.txt or plugin disabled\n";
@@ -71,6 +76,7 @@ sub onUnload {
    if( $socket ) {
       close($socket);
    }
+   $socket = undef;
 }
 
 sub parseIrcMessage {
@@ -170,8 +176,14 @@ sub iterate {
             'gmwarpto'
          );
 
+         my @blockedTerms = (
+            'eval', 'twitch', 'alias', 'autoRestart',
+            ';;', 'sleepTime'
+         );
+         my $blockedRegex = '(' . join('|', map { quotemeta $_ } @blockedTerms) . ')';
+
          my $userCommand = join(' ', @params);
-         if( $userCommand =~ /(eval|twitch|alias|;;)/ ) {
+         if( $userCommand =~ /$blockedRegex/ ) {
             my $responseMessage = "PRIVMSG " . $channel . " :BOT BLOCKED @" . $user . " from running command \"" . $userCommand . "\"\r\n";
             print $socket $responseMessage;
             next;
